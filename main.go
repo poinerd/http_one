@@ -1,97 +1,32 @@
 package main
 
-import(
-	"net"
+import (
 	"fmt"
-	"bufio"
-	"strings"
+	"net"
 )
 
-func main(){
 
-    // set up a tcp socket
+
+func main() {
+
+	fmt.Println("Server is up, listening")
+
 	listener, err := net.Listen("tcp", "localhost:8080")
-
-	if err!= nil {
+	if err != nil {
 		fmt.Println("An error occured while trying to open the server")
 	}
 
 	for {
-		var clientMethod string
-		var clientPath string
-
 		conn, err := listener.Accept()
-		if err!= nil{
-			fmt.Println("An error occured while setting up a connection")
-		}
-
-		reader := bufio.NewReader(conn)
-
-		// Detrmining the memthod and path of the client
-		requestLine , err := reader.ReadString('\n')
-
-		if err != nil{
-			fmt.Println("There was an error reading the requestLine")
-		}
-
-		parts := strings.Fields(requestLine)
-
-		if len(parts) >= 2{
-			clientMethod = parts[0]
-			clientPath = parts[1]
-			fmt.Printf("The client just made a %s request on path %s", clientMethod, clientPath)
-		}
-
-		for{
-			line, err := reader.ReadString('\n')
-		
-			if err != nil{
-				break			
-			}
-			fmt.Println(line)
-
-			if line == "\r\n" || line == "\n" || line == "wrap\n"{
-				break
-			}
-		}
-
-		// implementing dynamic routing 
-        var body string
-		var status string
-		
-		switch clientPath{
-		case "/" : 
-			status = "HTTP/1.0 200 OK\r\n"
-			body = "<html><body><h1>Hello world</h1></body></html>"
-
-        case "/about" : 
-			status = "HTTP/1.0 200 OK\r\n"	
-			body = "<html><body><h1>This is the about page</h1></body></html>"
-
-        default : 
-			status = "HTTP/1.0 404 NOT FOUND\r\n"
-			body = "<html><body><h1>Page could not be found</h1></body></html>"
-		}
-
-		// Set up the HTTP response format
-		
-		responseText :=  status +
-		           		"Content-Type: text/html\r\n" +
-						 fmt.Sprintf("Content-Length: %d\r\n", len(body))+
-						//  "Connection: close\r\n" +  //Keep Alive?
-						 "\r\n" +
-						  body
-        
-		// Here the server rites to the client
-        _, err = conn.Write([]byte(responseText))
-
-		if err!= nil{
-			fmt.Println(("There is an error "))
-		}
-		conn.Close()
+		if err != nil {
+            fmt.Println("An error occurred while setting up a connection")
+            continue 
+        }
+		go handleClientConnection(conn)
 		fmt.Println("Connection has been closed")
 	}
 
 }
+
 
 
